@@ -1,0 +1,41 @@
+<stack style="width: 100%; height: 100%;">
+    <div class="container" onswipe="handleSwipe">
+        <text class="label">VELOCIDAD</text>
+        <text class="speed-value" style="color: {{ speedColor }}">{{ speed }}</text>
+        <text class="unit" style="color: {{ speedColor }}">{{ unit }}</text>
+        <div class="stats-row" style="margin-bottom: -5px;">
+            <div class="stat-box">
+                <text class="stat-label">MAX ( Km/h )</text>
+                <text class="stat-value">{{ maxSpeed }}</text>
+            </div>
+            <div class="stat-box">
+                <text class="stat-label">MED ( Km/h )</text>
+                <text class="stat-value">{{ avgSpeed }}</text>
+            </div>
+            <div class="stat-box">
+                <text class="stat-label">MIN ( Km/h )</text>
+                <text class="stat-value">{{ minSpeed }}</text>
+            </div>
+        </div>
+        <div class="line" style="margin: 5px 0;"></div>
+        <div class="stats-row" style="height: 75px; margin-top: 3px;">
+            <div class="stat-box">
+                <text class="stat-label">ALT ( m )</text>
+                <text class="stat-value" style="font-size: 25px;">{{ altitude }}</text>
+            </div>
+            <div class="stat-box">
+                <text class="stat-label">DIST ( Km )</text>
+                <text class="distance-value">{{ distanceDisplay }}</text>
+            </div>
+            <div class="stat-box">
+                <text class="stat-label">HORA</text>
+                <text class="stat-value" style="font-size: 25px;">{{ currentTime }}</text>
+            </div>
+        </div>
+        <text class="footer-name" style="color: {{ footerColor }}">By MarcoS OchoA DieZ - MvIiIaX</text>
+        <text class="footer-corp" style="color: {{ footerColor }}">M8AX {{ currentYear }} - {{ romanYear }}</text>
+        <text class="footer-yt" style="color: {{ footerColor }}">Youtube - m8ax</text>
+    </div>
+    <div class="dot-izq" if="{{ isMoving }}" style="background-color: {{ footerColor }}"></div>
+    <div class="dot-der" if="{{ isMoving }}" style="background-color: {{ footerColor }}"></div>
+</stack>

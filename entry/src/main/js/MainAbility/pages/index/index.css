@@ -1,0 +1,108 @@
+.container {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #000000;
+    padding: 2px;
+}
+
+.label {
+    font-size: 22px;
+    color: #aaaaaa;
+}
+
+.speed-value {
+    font-size: 85px;
+    font-weight: bold;
+    color: #FF6200;
+    margin-top: -5px;
+}
+
+.unit {
+    font-size: 28px;
+    color: #FF6200;
+    margin-bottom: 2px;
+}
+
+.stats-row {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-around;
+    height: 65px;
+    margin: 5px 0;
+}
+
+.stat-box {
+    flex-direction: column;
+    align-items: center;
+    width: 35%;
+}
+
+.stat-label {
+    font-size: 17px;
+    color: #aaaaaa;
+}
+
+.stat-value {
+    font-size: 28px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.distance-value {
+    font-size: 37px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.line {
+    width: 80%;
+    height: 4px;
+    background-color: #333333;
+}
+
+.footer-name, .footer-yt, .footer-corp {
+    font-size: 20px;
+    color: deepskyblue;
+    text-align: center;
+    height: 25;
+    margin: 2px 0;
+}
+
+.dot-izq {
+    position: absolute;
+    top: 30%;
+    left: 12%;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    z-index: 999;
+    animation-name: blink;
+    animation-duration: 1000ms;
+    animation-iteration-count: infinite;
+}
+
+.dot-der {
+    position: absolute;
+    top: 30%;
+    left: 85%;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    z-index: 999;
+    animation-name: blink;
+    animation-duration: 1000ms;
+    animation-iteration-count: infinite;
+}
+
+@keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+
+    51%, 100% {
+        opacity: 0;
+    }
+}

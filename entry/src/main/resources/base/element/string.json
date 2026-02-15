@@ -1,0 +1,12 @@
+{
+  "string": [
+    {
+      "name": "MainAbility_label",
+      "value": "M8AX - Velocímetro"
+    },
+    {
+      "name": "MainAbility_desc",
+      "value": "Velocimetro y Cuentakilometros"
+    }
+  ]
+}
