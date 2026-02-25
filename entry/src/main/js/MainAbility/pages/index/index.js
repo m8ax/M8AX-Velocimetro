@@ -1,6 +1,7 @@
 import geolocation from '@system.geolocation'
 import brightness from '@system.brightness'
 import app from '@system.app'
+import sensor from '@system.sensor'
 
 export default {
     data: {
@@ -8,6 +9,7 @@ export default {
         maxSpeed: "0.00",
         minSpeed: "0.00",
         avgSpeed: "0.00",
+        lastUpdateTime: 0,
         totalSpeedSum: 0,
         speedReadingsCount: 0,
         distance: 0,
@@ -22,6 +24,9 @@ export default {
         currentTime: "00:00",
         footerColor: "#00FF00",
         isMoving: false,
+        lastSpeeds: [],
+        timer: null,
+        moveConfirmationCount: 0
     },
     onInit() {
         const d = new Date();
@@ -79,6 +84,20 @@ export default {
             brightness.setKeepScreenOn({ keepScreenOn: true });
         } catch (e) {
         }
+        var _this = this;
+        sensor.subscribeBarometer({
+            success: function (data) {
+                let p = data.pressure;
+                if (p > 2000) {
+                    p = p / 100;
+                }
+                let a = 44330 * (1 - Math.pow(p / 1013.25, 0.1903));
+                _this.altitude = a < 0 ? "0" : a.toFixed(0);
+            },
+            fail: function () {
+                _this.altitude = "---";
+            }
+        });
         this.startTracking();
     },
     handleSwipe(e) {
@@ -98,6 +117,8 @@ export default {
             success: function (data) {
                 if (data.altitude !== undefined && data.altitude !== null && !isNaN(data.altitude)) {
                     _this.altitude = data.altitude.toFixed(0);
+                } else if (data.alt !== undefined && data.alt !== null && !isNaN(data.alt)) {
+                    _this.altitude = data.alt.toFixed(0);
                 }
                 if (!data || data.latitude === undefined || data.longitude === undefined) {
                     return;
@@ -113,17 +134,36 @@ export default {
                 }
                 let v = (data.speed && data.speed > 0) ? data.speed * 3.6 : 0;
                 let distActual = _this.calculateDistance(_this.lastLat, _this.lastLon, data.latitude, data.longitude);
-                if (v === 0 && distActual > 0) {
+                if (v === 0 && distActual > 0.002 && distActual < 2.0) {
                     let now = new Date().getTime();
                     let deltaT = (now - _this.lastUpdateTime) / 1000;
                     if (deltaT > 0.5 && deltaT < 10) {
                         v = (distActual / deltaT) * 3600;
                     }
                 }
+                let vAnterior = parseFloat(_this.speed);
+                if (vAnterior > 1.0 && v < 150) {
+                    v = (v * 0.8) + (vAnterior * 0.2);
+                }
                 if (distActual > 0.002 && distActual < 2.0) {
-                    _this.distance += distActual;
-                    _this.distanceDisplay = _this.distance.toFixed(2);
-                    _this.speedColor = v > 120 ? "#DC143C" : "#FF6200";
+                    if (v > 1.5) {
+                        _this.moveConfirmationCount++;
+                    } else {
+                        _this.moveConfirmationCount = 0;
+                    }
+                    if (_this.moveConfirmationCount >= 2) {
+                        _this.distance += distActual;
+                        _this.distanceDisplay = _this.distance.toFixed(2);
+                    }
+                    if (v > 120) {
+                        _this.speedColor = "#FF0000";
+                        _this.unit = "Km/h - ¡ TEN CUIDADO !";
+                    } else {
+                        _this.speedColor = "#FF6200";
+                        if (_this.unit.includes("¡") || _this.unit.includes("---")) {
+                            _this.unit = "Km/h";
+                        }
+                    }
                     if (v > 1.0) {
                         _this.isMoving = true;
                         _this.speed = v.toFixed(2);
@@ -140,11 +180,17 @@ export default {
                         _this.isMoving = false;
                         _this.speed = "0.00";
                         _this.speedColor = "#FF6200";
+                        if (_this.unit.includes("¡")) {
+                            _this.unit = "Km/h";
+                        }
                     }
                 } else {
                     _this.isMoving = false;
                     _this.speed = "0.00";
                     _this.speedColor = "#FF6200";
+                    if (_this.unit.includes("¡")) {
+                        _this.unit = "Km/h";
+                    }
                 }
                 _this.lastLat = data.latitude;
                 _this.lastLon = data.longitude;
@@ -164,11 +210,15 @@ export default {
                 _this.speed = "0.00";
                 _this.isMoving = false;
                 _this.speedColor = "#FF6200";
+                _this.moveConfirmationCount = 0;
+                if (_this.unit.includes("¡")) {
+                    _this.unit = "Km/h";
+                }
             }
         }, 1000);
     },
     calculateDistance(lat1, lon1, lat2, lon2) {
-        var R = 6371;
+        var R = 6371.0088;
         var dLat = (lat2 - lat1) * Math.PI / 180;
         var dLon = (lon2 - lon1) * Math.PI / 180;
         var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -179,6 +229,7 @@ export default {
     onDestroy() {
         try {
             geolocation.unsubscribe();
+            sensor.unsubscribeBarometer();
             if (this.timer) {
                 clearInterval(this.timer);
             }
