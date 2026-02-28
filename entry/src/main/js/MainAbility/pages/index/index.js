@@ -2,15 +2,30 @@ import geolocation from '@system.geolocation'
 import brightness from '@system.brightness'
 import app from '@system.app'
 import sensor from '@system.sensor'
+import battery from '@system.battery'
 
 export default {
     data: {
+        batteryLevel: 100,
+        batteryColor: "#FFFFFF",
+        frasecillas: [
+            "... En Reposo ...",
+            "... Velocidad Muy Lenta ...",
+            "... Velocidad Lenta ...",
+            "... Velocidad Moderada ...",
+            "... Velocidad Alta ...",
+            "... Velocidad Muy Alta ...",
+            "... Velocidad De Crucero ...",
+            "... Velocidad Extrema, ¿ Vuelas ? ..."
+        ],
+        footerText: "... En Reposo ...",
         speed: "0.00",
+        totalSpeedSum: 0,
         maxSpeed: "0.00",
         minSpeed: "0.00",
         avgSpeed: "0.00",
+        positionBuffer: [],
         lastUpdateTime: 0,
-        totalSpeedSum: 0,
         speedReadingsCount: 0,
         distance: 0,
         distanceDisplay: "0.00",
@@ -21,10 +36,10 @@ export default {
         romanYear: "",
         speedColor: "#FF6200",
         altitude: "---",
+        hasGpsAltitude: false,
         currentTime: "00:00",
         footerColor: "#00FF00",
         isMoving: false,
-        lastSpeeds: [],
         timer: null,
         moveConfirmationCount: 0
     },
@@ -87,6 +102,9 @@ export default {
         var _this = this;
         sensor.subscribeBarometer({
             success: function (data) {
+                if (_this.hasGpsAltitude) {
+                    return;
+                }
                 let p = data.pressure;
                 if (p > 2000) {
                     p = p / 100;
@@ -105,8 +123,18 @@ export default {
             app.terminate();
         }
     },
+    updateBatteryColor(level) {
+        if (level > 60) {
+            return "#00FF00";
+        }
+        if (level > 20) {
+            return "#FF8800";
+        }
+        return "#FF0000";
+    },
     startTracking() {
         var _this = this;
+        let counter = 29;
         if (this.timer) {
             clearInterval(this.timer);
         }
@@ -117,10 +145,20 @@ export default {
             success: function (data) {
                 if (data.altitude !== undefined && data.altitude !== null && !isNaN(data.altitude)) {
                     _this.altitude = data.altitude.toFixed(0);
+                    _this.hasGpsAltitude = true;
                 } else if (data.alt !== undefined && data.alt !== null && !isNaN(data.alt)) {
                     _this.altitude = data.alt.toFixed(0);
+                    _this.hasGpsAltitude = true;
                 }
                 if (!data || data.latitude === undefined || data.longitude === undefined) {
+                    return;
+                }
+                if (
+                    isNaN(data.latitude) ||
+                    isNaN(data.longitude) ||
+                        !isFinite(data.latitude) ||
+                        !isFinite(data.longitude)
+                ) {
                     return;
                 }
                 if (_this.unit.includes("---")) {
@@ -132,9 +170,25 @@ export default {
                     _this.lastUpdateTime = new Date().getTime();
                     return;
                 }
-                let v = (data.speed && data.speed > 0) ? data.speed * 3.6 : 0;
+                let now = new Date().getTime();
+                _this.positionBuffer.push({ lat: data.latitude, lon: data.longitude, time: now });
+                if (_this.positionBuffer.length > 10) {
+                    _this.positionBuffer.shift();
+                }
+                let v = 0;
+                if (_this.positionBuffer.length >= 2) {
+                    let first = _this.positionBuffer[0];
+                    let last = _this.positionBuffer[_this.positionBuffer.length - 1];
+                    let dist = _this.calculateDistance(first.lat, first.lon, last.lat, last.lon);
+                    let dt = (last.time - first.time) / 1000;
+                    if (dt > 0 && isFinite(dist)) {
+                        v = (dist / dt) * 3600;
+                    } else {
+                        v = 0;
+                    }
+                }
                 let distActual = _this.calculateDistance(_this.lastLat, _this.lastLon, data.latitude, data.longitude);
-                if (v === 0 && distActual > 0.002 && distActual < 2.0) {
+                if (v === 0 && distActual > 0.0003 && distActual < 2.0) {
                     let now = new Date().getTime();
                     let deltaT = (now - _this.lastUpdateTime) / 1000;
                     if (deltaT > 0.5 && deltaT < 10) {
@@ -142,11 +196,22 @@ export default {
                     }
                 }
                 let vAnterior = parseFloat(_this.speed);
-                if (vAnterior > 1.0 && v < 150) {
-                    v = (v * 0.8) + (vAnterior * 0.2);
+                if (!isFinite(v)) {
+                    v = 0;
                 }
-                if (distActual > 0.002 && distActual < 2.0) {
-                    if (v > 1.5) {
+                let alpha;
+                if (v < 20) {
+                    alpha = 0.4;
+                } else if (v < 120) {
+                    alpha = 0.6;
+                } else {
+                    alpha = 0.85;
+                }
+                if (!isNaN(vAnterior) && vAnterior > 0) {
+                    v = (v * alpha) + (vAnterior * (1 - alpha));
+                }
+                if (distActual > 0.0003 && distActual < 2.0) {
+                    if (v > 0.3) {
                         _this.moveConfirmationCount++;
                     } else {
                         _this.moveConfirmationCount = 0;
@@ -164,7 +229,7 @@ export default {
                             _this.unit = "Km/h";
                         }
                     }
-                    if (v > 1.0) {
+                    if (v > 0.3) {
                         _this.isMoving = true;
                         _this.speed = v.toFixed(2);
                         if (v > parseFloat(_this.maxSpeed)) {
@@ -205,12 +270,42 @@ export default {
             let hh = now.getHours();
             let mm = now.getMinutes();
             _this.currentTime = (hh < 10 ? "0" + hh : hh) + ":" + (mm < 10 ? "0" + mm : mm);
+            counter++;
+            let s = parseFloat(_this.speed);
+            if (s < 0.3) {
+                _this.footerText = _this.frasecillas[0];
+            } else if (s < 5.0) {
+                _this.footerText = _this.frasecillas[1];
+            } else if (s < 10.0) {
+                _this.footerText = _this.frasecillas[2];
+            } else if (s < 20.0) {
+                _this.footerText = _this.frasecillas[3];
+            } else if (s < 60.0) {
+                _this.footerText = _this.frasecillas[4];
+            } else if (s < 100.0) {
+                _this.footerText = _this.frasecillas[5];
+            } else if (s < 200.0) {
+                _this.footerText = _this.frasecillas[6];
+            } else {
+                _this.footerText = _this.frasecillas[7];
+            }
+            if (counter >= 30) {
+                battery.getStatus({
+                    success: function (data) {
+                        let level = Math.round(data.level * 100);
+                        _this.batteryLevel = level;
+                        _this.batteryColor = _this.updateBatteryColor(level);
+                    }
+                });
+                counter = 0;
+            }
             let ahoraMs = now.getTime();
             if (ahoraMs - _this.lastUpdateTime > 3000) {
                 _this.speed = "0.00";
                 _this.isMoving = false;
                 _this.speedColor = "#FF6200";
                 _this.moveConfirmationCount = 0;
+                _this.hasGpsAltitude = false;
                 if (_this.unit.includes("¡")) {
                     _this.unit = "Km/h";
                 }

@@ -1,6 +1,6 @@
 <stack style="width: 100%; height: 100%;">
     <div class="container" onswipe="handleSwipe">
-        <text class="label">VELOCIDAD</text>
+        <text class="label">VELOCÍMETRO PRO</text>
         <text class="speed-value" style="color: {{ speedColor }}">{{ speed }}</text>
         <text class="unit" style="color: {{ speedColor }}">{{ unit }}</text>
         <div class="stats-row" style="margin-bottom: -5px;">
@@ -17,7 +17,9 @@
                 <text class="stat-value">{{ minSpeed }}</text>
             </div>
         </div>
-        <div class="line" style="margin: 5px 0;"></div>
+        <div class="battery-bg">
+            <div class="battery-fill" style="width: {{ batteryLevel }}%; background-color: {{ batteryColor }};"></div>
+        </div>
         <div class="stats-row" style="height: 75px; margin-top: 3px;">
             <div class="stat-box">
                 <text class="stat-label">ALT ( m )</text>
@@ -32,6 +34,14 @@
                 <text class="stat-value" style="font-size: 25px;">{{ currentTime }}</text>
             </div>
         </div>
+        <div style="flex-direction: row; justify-content: center; align-items: center; width: 100%; height: 25px;
+                margin-top: -16px;">
+            <text style="color: #FFFFFF; font-size: 24px; height: 25px; line-height: 25px; margin-right: 5px;">BATERÍA -
+            </text>
+            <text style="color: {{ batteryColor }}; font-size: 24px; height: 25px; line-height: 25px;">{{ batteryLevel
+                }}%</text>
+        </div>
+        <text class="footer-mov">{{ footerText }}</text>
         <text class="footer-name" style="color: {{ footerColor }}">By MarcoS OchoA DieZ - MvIiIaX</text>
         <text class="footer-corp" style="color: {{ footerColor }}">M8AX {{ currentYear }} - {{ romanYear }}</text>
         <text class="footer-yt" style="color: {{ footerColor }}">Youtube - m8ax</text>

@@ -9,21 +9,22 @@
 }
 
 .label {
-    font-size: 22px;
+    font-size: 16px;
     color: #aaaaaa;
 }
 
 .speed-value {
-    font-size: 85px;
+    font-size: 80px;
     font-weight: bold;
     color: #FF6200;
-    margin-top: -5px;
+    margin-top: -1px;
 }
 
 .unit {
     font-size: 28px;
     color: #FF6200;
-    margin-bottom: 2px;
+    margin-bottom: 6px;
+    margin-top: -17px;
 }
 
 .stats-row {
@@ -52,23 +53,38 @@
 }
 
 .distance-value {
-    font-size: 37px;
+    font-size: 30px;
     color: #ffffff;
     font-weight: bold;
 }
 
-.line {
+.battery-bg {
     width: 80%;
     height: 4px;
     background-color: #333333;
+    margin: 5px 0;
+    flex-direction: row;
+}
+
+.battery-fill {
+    height: 100%;
+    transition: width 0.5s ease;
 }
 
 .footer-name, .footer-yt, .footer-corp {
-    font-size: 20px;
+    font-size: 18px;
     color: deepskyblue;
     text-align: center;
     height: 25;
-    margin: 2px 0;
+}
+
+.footer-mov {
+    font-size: 20px;
+    color: yellow;
+    text-align: center;
+    height: 25px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .dot-izq {
